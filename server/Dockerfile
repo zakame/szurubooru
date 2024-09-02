@@ -1,7 +1,7 @@
 ARG ALPINE_VERSION=3.13
 
 
-FROM alpine:$ALPINE_VERSION as prereqs
+FROM alpine:$ALPINE_VERSION AS prereqs
 WORKDIR /opt/app
 
 RUN apk --no-cache add \
@@ -37,7 +37,7 @@ COPY ./ /opt/app/
 RUN rm -rf /opt/app/szurubooru/tests
 
 
-FROM --platform=$BUILDPLATFORM prereqs as testing
+FROM --platform=$BUILDPLATFORM prereqs AS testing
 WORKDIR /opt/app
 
 RUN apk --no-cache add \
@@ -61,7 +61,7 @@ ENTRYPOINT ["pytest", "--tb=short"]
 CMD ["szurubooru/"]
 
 
-FROM prereqs as release
+FROM prereqs AS release
 WORKDIR /opt/app
 
 ARG PUID=1000
