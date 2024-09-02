@@ -61,21 +61,24 @@ jobs:
       - name: Expose GitHub Runtime
         uses: crazy-max/ghaction-github-runtime@b3a9207c0e1ef41f4cf215303c976869d0c2c1c4 # v3.0.0
 
-      - name: Build container
-        run: >
-          docker buildx build ${{ github.event_name != 'pull_request' && '--push' || '' }}
-          --cache-to type=gha,mode=max,ghtoken=${{ secrets.GITHUB_TOKEN }},scope=client
-          --cache-from type=gha,scope=client
-          --platform linux/amd64,linux/arm/v7,linux/arm64/v8
-          --build-arg BUILD_INFO=v${{ steps.metadata.outputs.build_info }}
-          --build-arg BUILD_DATE=${{ steps.metadata.outputs.build_date }}
-          --build-arg SOURCE_COMMIT=$GITHUB_SHA
-          --build-arg DOCKER_REPO=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/client
-          -t "${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/client:${{ steps.metadata.outputs.build_info }}"
-          -t "${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/client:${{ steps.metadata.outputs.major_tag }}"
-          -t "${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/client:${{ steps.metadata.outputs.minor_tag }}"
-          ./client
-
+      - name: Build Image
+        uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85 # v6.7.0
+        with:
+          context: ./client
+          platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/client:${{ steps.metadata.outputs.build_info }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/client:${{ steps.metadata.outputs.major_tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/client:${{ steps.metadata.outputs.minor_tag }}
+          build-args: |
+            BUILD_INFO=v${{ steps.metadata.outputs.build_info }}
+            BUILD_DATE=${{ steps.metadata.outputs.build_date }}
+            SOURCE_COMMIT=$GITHUB_SHA
+            DOCKER_REPO=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/client
+          cache-from: type=gha,scope=client
+          cache-to: type=gha,mode=max,scope=client
+  
   build-server:
     name: Build and push server/ Docker container
     runs-on: ubuntu-latest
@@ -125,17 +128,20 @@ jobs:
       - name: Expose GitHub Runtime
         uses: crazy-max/ghaction-github-runtime@b3a9207c0e1ef41f4cf215303c976869d0c2c1c4 # v3.0.0
 
-      - name: Build container
-        run: >
-          docker buildx build ${{ github.event_name != 'pull_request' && '--push' || '' }}
-          --cache-to type=gha,mode=max,ghtoken=${{ secrets.GITHUB_TOKEN }},scope=server
-          --cache-from type=gha,scope=server
-          --platform linux/amd64,linux/arm/v7,linux/arm64/v8
-          --build-arg BUILD_INFO=v${{ steps.metadata.outputs.build_info }}
-          --build-arg BUILD_DATE=${{ steps.metadata.outputs.build_date }}
-          --build-arg SOURCE_COMMIT=$GITHUB_SHA
-          --build-arg DOCKER_REPO=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/server
-          -t "${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/server:${{ steps.metadata.outputs.build_info }}"
-          -t "${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/server:${{ steps.metadata.outputs.major_tag }}"
-          -t "${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/server:${{ steps.metadata.outputs.minor_tag }}"
-          ./server
+      - name: Build Image
+        uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85 # v6.7.0
+        with:
+          context: ./server
+          platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/server:${{ steps.metadata.outputs.build_info }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/server:${{ steps.metadata.outputs.major_tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/server:${{ steps.metadata.outputs.minor_tag }}
+          build-args: |
+            BUILD_INFO=v${{ steps.metadata.outputs.build_info }}
+            BUILD_DATE=${{ steps.metadata.outputs.build_date }}
+            SOURCE_COMMIT=$GITHUB_SHA
+            DOCKER_REPO=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/server
+          cache-from: type=gha,scope=server
+          cache-to: type=gha,mode=max,scope=server
