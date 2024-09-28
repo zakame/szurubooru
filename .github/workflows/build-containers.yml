@@ -20,61 +20,16 @@ jobs:
       packages: write
 
     steps:
-      - name: Login to GitHub Container Registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0
 
-      - name: Determine metadata
-        id: metadata
-        run: |
-          CLOSEST_VER="$(git describe --tags --abbrev=0 $GITHUB_SHA)"
-          CLOSEST_MAJOR_VER="$(echo ${CLOSEST_VER} | cut -d'.' -f1)"
-          CLOSEST_MINOR_VER="$(echo ${CLOSEST_VER} | cut -d'.' -f2)"
-          SHORT_COMMIT=$(echo $GITHUB_SHA | cut -c1-8)
-          BUILD_INFO="${CLOSEST_VER}-${SHORT_COMMIT}"
-          BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-          echo "major_tag=${CLOSEST_MAJOR_VER}" >> $GITHUB_OUTPUT
-          echo "minor_tag=${CLOSEST_MAJOR_VER}.${CLOSEST_MINOR_VER}" >> $GITHUB_OUTPUT
-          echo "build_info=${BUILD_INFO}" >> $GITHUB_OUTPUT
-          echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
-
-          echo "Build Info: v${BUILD_INFO}"
-          echo "Build Date: ${BUILD_DATE}"
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
-
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
-
-      - name: Build Image
-        uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85 # v6.7.0
+      - name: Build szurubooru/client
+        uses: ./.github/actions/build-container-image
         with:
-          context: ./client
-          platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/client:${{ steps.metadata.outputs.build_info }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/client:${{ steps.metadata.outputs.major_tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/client:${{ steps.metadata.outputs.minor_tag }}
-          build-args: |
-            BUILD_INFO=v${{ steps.metadata.outputs.build_info }}
-            BUILD_DATE=${{ steps.metadata.outputs.build_date }}
-            SOURCE_COMMIT=$GITHUB_SHA
-            DOCKER_REPO=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/client
-          cache-from: type=gha,scope=client
-          cache-to: type=gha,mode=max,scope=client
+          context: client
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
   
   build-server:
     name: Build and push server/ Docker container
@@ -84,58 +39,13 @@ jobs:
       packages: write
 
     steps:
-      - name: Login to GitHub Container Registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0
 
-      - name: Determine metadata
-        id: metadata
-        run: |
-          CLOSEST_VER="$(git describe --tags --abbrev=0 $GITHUB_SHA)"
-          CLOSEST_MAJOR_VER="$(echo ${CLOSEST_VER} | cut -d'.' -f1)"
-          CLOSEST_MINOR_VER="$(echo ${CLOSEST_VER} | cut -d'.' -f2)"
-          SHORT_COMMIT=$(echo $GITHUB_SHA | cut -c1-8)
-          BUILD_INFO="${CLOSEST_VER}-${SHORT_COMMIT}"
-          BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-          echo "major_tag=${CLOSEST_MAJOR_VER}" >> $GITHUB_OUTPUT
-          echo "minor_tag=${CLOSEST_MAJOR_VER}.${CLOSEST_MINOR_VER}" >> $GITHUB_OUTPUT
-          echo "build_info=${BUILD_INFO}" >> $GITHUB_OUTPUT
-          echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
-
-          echo "Build Info: v${BUILD_INFO}"
-          echo "Build Date: ${BUILD_DATE}"
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
-
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
-
-      - name: Build Image
-        uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85 # v6.7.0
+      - name: Build szurubooru/server
+        uses: ./.github/actions/build-container-image
         with:
-          context: ./server
-          platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/server:${{ steps.metadata.outputs.build_info }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/server:${{ steps.metadata.outputs.major_tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/server:${{ steps.metadata.outputs.minor_tag }}
-          build-args: |
-            BUILD_INFO=v${{ steps.metadata.outputs.build_info }}
-            BUILD_DATE=${{ steps.metadata.outputs.build_date }}
-            SOURCE_COMMIT=$GITHUB_SHA
-            DOCKER_REPO=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/server
-          cache-from: type=gha,scope=server
-          cache-to: type=gha,mode=max,scope=server
+          context: server
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
