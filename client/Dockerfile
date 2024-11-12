@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:lts as builder
+FROM --platform=$BUILDPLATFORM node:lts AS builder
 WORKDIR /opt/app
 
 COPY package.json package-lock.json ./
@@ -11,7 +11,7 @@ ARG CLIENT_BUILD_ARGS=""
 RUN BASE_URL="__BASEURL__" node build.js --gzip ${CLIENT_BUILD_ARGS}
 
 
-FROM --platform=$BUILDPLATFORM scratch as approot
+FROM --platform=$BUILDPLATFORM scratch AS approot
 
 COPY docker-start.sh /
 
@@ -22,7 +22,7 @@ WORKDIR /var/www
 COPY --from=builder /opt/app/public/ .
 
 
-FROM nginx:alpine as release
+FROM nginx:alpine AS release
 
 RUN apk --no-cache add dumb-init
 COPY --from=approot / /
@@ -36,9 +36,9 @@ ARG SOURCE_COMMIT
 LABEL \
     maintainer="" \
     org.opencontainers.image.title="${DOCKER_REPO}" \
-    org.opencontainers.image.url="https://github.com/rr-/szurubooru" \
-    org.opencontainers.image.documentation="https://github.com/rr-/szurubooru/blob/${SOURCE_COMMIT}/doc/INSTALL.md" \
+    org.opencontainers.image.url="https://github.com/zakame/szurubooru" \
+    org.opencontainers.image.documentation="https://github.com/zakame/szurubooru/blob/${SOURCE_COMMIT}/doc/INSTALL.md" \
     org.opencontainers.image.created="${BUILD_DATE}" \
-    org.opencontainers.image.source="https://github.com/rr-/szurubooru" \
+    org.opencontainers.image.source="https://github.com/zakame/szurubooru" \
     org.opencontainers.image.revision="${SOURCE_COMMIT}" \
     org.opencontainers.image.licenses="GPL-3.0"
